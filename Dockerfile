@@ -1,3 +1,4 @@
+# Install ILSpy with the SDK; only the runtime is needed in the final image.
 FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS ilspy
 
 ARG ILSPYCMD_VERSION=11.0.0.9375
@@ -18,7 +19,7 @@ ARG BUNDLETOOL_SHA256=a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         binutils-multiarch ca-certificates curl graphviz libsmali-java \
-        openjdk-21-jre-headless python3-venv unzip \
+        openjdk-21-jdk-headless python3-venv ripgrep unzip \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -fsSL --retry 3 "https://github.com/skylot/jadx/releases/download/v${JADX_VERSION}/jadx-${JADX_VERSION}.zip" -o /tmp/jadx.zip \
@@ -35,6 +36,7 @@ RUN mkdir -p /opt/apktool \
     && printf '%s\n' '#!/bin/sh' 'exec java -jar /opt/apktool/apktool.jar "$@"' > /usr/local/bin/apktool \
     && chmod +x /usr/local/bin/apktool
 
+# Share one virtual environment across the Python tools.
 RUN python3 -m venv /opt/hermes-dec \
     && /opt/hermes-dec/bin/pip install --no-cache-dir \
         "hermes-dec==$HERMES_DEC_VERSION" \
@@ -48,9 +50,33 @@ RUN mkdir -p /opt/bundletool \
     && printf '%s\n' '#!/bin/sh' 'exec java -jar /opt/bundletool/bundletool.jar "$@"' > /usr/local/bin/bundletool \
     && chmod +x /usr/local/bin/bundletool
 
-COPY --from=ilspy /opt/ilspy /opt/ilspy
-ENV PATH="/opt/ilspy:/opt/hermes-dec/bin:${PATH}"
+# BuildKit supplies TARGETARCH to select Joern's matching native binaries.
+ARG TARGETARCH
+ARG JOERN_VERSION=4.0.634
+ARG JOERN_AMD64_SHA256=b446f639786eb4c2eccc5a73f62ad20c9d82aff1ba8f3870506d8034fb042577
+ARG JOERN_ARM64_SHA256=de6bb0532aab501044e71336e2332428001e22ae3696d33092e0849ac59182d3
+ARG JOERN_QUERYDB_SHA256=7a0d61a571795855fb7d7d95797a1f0dc8db2c26e37682896ee8ef1c12c9bf80
 
+RUN case "$TARGETARCH" in \
+        amd64) joern_arch=x86_64; joern_sha256="$JOERN_AMD64_SHA256" ;; \
+        arm64) joern_arch=arm64; joern_sha256="$JOERN_ARM64_SHA256" ;; \
+        *) echo "Unsupported Joern architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac \
+    && curl -fsSL --retry 3 "https://github.com/joernio/joern/releases/download/v${JOERN_VERSION}/joern-cli-linux-${joern_arch}.zip" -o /tmp/joern.zip \
+    && echo "$joern_sha256  /tmp/joern.zip" | sha256sum -c - \
+    && unzip -q /tmp/joern.zip -d /opt \
+    && rm /tmp/joern.zip
+
+# Bundle the default queries used by joern-scan.
+RUN curl -fsSL --retry 3 "https://github.com/joernio/joern/releases/download/v${JOERN_VERSION}/querydb.zip" -o /tmp/querydb.zip \
+    && echo "$JOERN_QUERYDB_SHA256  /tmp/querydb.zip" | sha256sum -c - \
+    && /opt/joern-cli/joern --add-plugin /tmp/querydb.zip \
+    && rm /tmp/querydb.zip
+
+COPY --from=ilspy /opt/ilspy /opt/ilspy
+ENV PATH="/opt/joern-cli:/opt/ilspy:/opt/hermes-dec/bin:${PATH}"
+
+# Run analysis as the base image's unprivileged app user.
 WORKDIR /work
 RUN chown app:app /work
 USER app
@@ -71,6 +97,13 @@ RUN jadx --version \
     && objdump --version \
     && nm --version \
     && strings --version \
-    && bundletool version
+    && rg --version \
+    && bundletool version \
+    && joern --help > /dev/null \
+    && joern-parse --help > /dev/null \
+    && joern-export --help > /dev/null \
+    && joern-scan --dump-to /tmp/joern-queries.json \
+    && python3 -c 'import json; assert json.load(open("/tmp/joern-queries.json"))' \
+    && rm /tmp/joern-queries.json /tmp/joern-scan-log.txt
 
 CMD ["bash"]
