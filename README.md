@@ -21,12 +21,16 @@ The image includes the Java 21 JDK, Python 3, .NET 10, `unzip`, and Graphviz for
 Androguard graphs. Binutils supports multiple target architectures. Joern includes
 its default query database and uses the matching AMD64 or ARM64 release.
 
-## Build
-
-Start Docker, then run:
+## Pull
 
 ```sh
-docker build -t revbox .
+docker pull philipwold/revbox
+```
+
+## Build
+
+```sh
+docker build -t philipwold/revbox .
 ```
 
 The build verifies the JADX, Apktool, bundletool, and Joern download checksums and
@@ -38,28 +42,28 @@ Joern adds approximately 1.9 GB of downloads plus its query database.
 Open a shell with the current directory mounted at `/work`:
 
 ```sh
-docker run --rm -it -v "$PWD:/work" revbox
+docker run --rm -it -v "$PWD:/work" philipwold/revbox
 ```
 
 Or run a tool directly (replace the input filenames with your own):
 
 ```sh
-docker run --rm -v "$PWD:/work" revbox jadx-cli -d java-output app.apk
-docker run --rm -v "$PWD:/work" revbox apktool d app.apk -o apk-output
-docker run --rm -v "$PWD:/work" revbox hermes-dec index.android.bundle hermes-output.js
-docker run --rm -v "$PWD:/work" revbox ilspycmd -p -o dotnet-output assembly.dll
-docker run --rm -v "$PWD:/work" revbox baksmali disassemble classes.dex -o smali-output
-docker run --rm -v "$PWD:/work" revbox smali assemble smali-output -o rebuilt.dex
-docker run --rm -v "$PWD:/work" revbox androguard apkid app.apk
-docker run --rm -v "$PWD:/work" revbox apkid app.apk
-docker run --rm -v "$PWD:/work" revbox readelf -h libnative.so
-docker run --rm -v "$PWD:/work" revbox objdump -d libnative.so
-docker run --rm -v "$PWD:/work" revbox nm -D libnative.so
-docker run --rm -v "$PWD:/work" revbox strings libnative.so
-docker run --rm -v "$PWD:/work" revbox rg -n 'https?://' java-output
-docker run --rm -v "$PWD:/work" revbox bundletool validate --bundle=app.aab
-docker run --rm -v "$PWD:/work" revbox joern-parse java-output --language JAVASRC --output cpg.bin
-docker run --rm -it -v "$PWD:/work" revbox joern
+docker run --rm -v "$PWD:/work" philipwold/revbox jadx-cli -d java-output app.apk
+docker run --rm -v "$PWD:/work" philipwold/revbox apktool d app.apk -o apk-output
+docker run --rm -v "$PWD:/work" philipwold/revbox hermes-dec index.android.bundle hermes-output.js
+docker run --rm -v "$PWD:/work" philipwold/revbox ilspycmd -p -o dotnet-output assembly.dll
+docker run --rm -v "$PWD:/work" philipwold/revbox baksmali disassemble classes.dex -o smali-output
+docker run --rm -v "$PWD:/work" philipwold/revbox smali assemble smali-output -o rebuilt.dex
+docker run --rm -v "$PWD:/work" philipwold/revbox androguard apkid app.apk
+docker run --rm -v "$PWD:/work" philipwold/revbox apkid app.apk
+docker run --rm -v "$PWD:/work" philipwold/revbox readelf -h libnative.so
+docker run --rm -v "$PWD:/work" philipwold/revbox objdump -d libnative.so
+docker run --rm -v "$PWD:/work" philipwold/revbox nm -D libnative.so
+docker run --rm -v "$PWD:/work" philipwold/revbox strings libnative.so
+docker run --rm -v "$PWD:/work" philipwold/revbox rg -n 'https?://' java-output
+docker run --rm -v "$PWD:/work" philipwold/revbox bundletool validate --bundle=app.aab
+docker run --rm -v "$PWD:/work" philipwold/revbox joern-parse java-output --language JAVASRC --output cpg.bin
+docker run --rm -it -v "$PWD:/work" philipwold/revbox joern
 ```
 Outputs in `/work` are saved to the host directory. The container runs as the
 unprivileged `app` user; the mounted directory must be writable by that user.
@@ -73,4 +77,4 @@ Downloaded tool versions are pinned in `Dockerfile`. To upgrade JADX, Apktool, o
 bundletool, update both the version and its SHA-256 checksum. For Joern, update
 the version, both architecture checksums, and the query database checksum. The
 base image and OS packages receive updates when rebuilding with
-`docker build --pull --no-cache -t revbox .`.
+`docker build --pull --no-cache -t philipwold/revbox .`.
