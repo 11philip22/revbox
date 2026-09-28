@@ -11,6 +11,10 @@ A Docker toolbox for inspecting Android apps.
 | [smali / baksmali](https://packages.ubuntu.com/noble/libsmali-java) | Ubuntu package (2.5.2) | `smali`, `baksmali` |
 | [Androguard](https://pypi.org/project/androguard/4.1.4/) | 4.1.4 | `androguard` |
 | [APKiD](https://pypi.org/project/apkid/3.1.0/) | 3.1.0 | `apkid` |
+| [LZ4 CLI](https://packages.ubuntu.com/noble/lz4) | Ubuntu package (1.9.4) | `lz4` |
+| [lz4](https://pypi.org/project/lz4/4.4.5/) | 4.4.5 | Python: `import lz4.block`, `import lz4.frame` |
+| [dnfile](https://pypi.org/project/dnfile/0.18.0/) | 0.18.0 | Python: `import dnfile` |
+| [pyelftools](https://pypi.org/project/pyelftools/0.33/) | 0.33 | Python: `from elftools.elf.elffile import ELFFile` |
 | [GNU Binutils](https://packages.ubuntu.com/noble/binutils-multiarch) | Ubuntu package (2.42) | `readelf`, `objdump`, `nm`, `strings` |
 | [ripgrep](https://packages.ubuntu.com/noble/ripgrep) | Ubuntu package (14.1.0) | `rg` |
 | [bundletool](https://github.com/google/bundletool/releases/tag/1.18.3) | 1.18.3 | `bundletool` |
@@ -20,6 +24,7 @@ A Docker toolbox for inspecting Android apps.
 The image includes the Java 21 JDK, Python 3, .NET 10, `unzip`, and Graphviz for
 Androguard graphs. Binutils supports multiple target architectures. Joern includes
 its default query database and uses the matching AMD64 or ARM64 release.
+Python tools and libraries share `/opt/venv`, with `python3` and `pip` on `PATH`.
 
 ## Pull
 
@@ -56,6 +61,7 @@ docker run --rm -v "$PWD:/work" philipwold/revbox baksmali disassemble classes.d
 docker run --rm -v "$PWD:/work" philipwold/revbox smali assemble smali-output -o rebuilt.dex
 docker run --rm -v "$PWD:/work" philipwold/revbox androguard apkid app.apk
 docker run --rm -v "$PWD:/work" philipwold/revbox apkid app.apk
+docker run --rm -v "$PWD:/work" philipwold/revbox lz4 -d input.lz4 output.bin
 docker run --rm -v "$PWD:/work" philipwold/revbox readelf -h libnative.so
 docker run --rm -v "$PWD:/work" philipwold/revbox objdump -d libnative.so
 docker run --rm -v "$PWD:/work" philipwold/revbox nm -D libnative.so

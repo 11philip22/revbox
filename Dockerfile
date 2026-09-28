@@ -13,12 +13,15 @@ ARG APKTOOL_SHA256=dbf930b076c6b9be08d57c449cacefc3bdd6b71ebd59b3066fc0e1f5b14f9
 ARG HERMES_DEC_VERSION=0.1.7
 ARG ANDROGUARD_VERSION=4.1.4
 ARG APKID_VERSION=3.1.0
+ARG LZ4_VERSION=4.4.5
+ARG DNFILE_VERSION=0.18.0
+ARG PYELFTOOLS_VERSION=0.33
 ARG BUNDLETOOL_VERSION=1.18.3
 ARG BUNDLETOOL_SHA256=a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        binutils-multiarch ca-certificates curl graphviz libsmali-java \
+        binutils-multiarch ca-certificates curl graphviz libsmali-java lz4 \
         openjdk-21-jdk-headless python3-venv ripgrep unzip \
     && rm -rf /var/lib/apt/lists/*
 
@@ -37,12 +40,13 @@ RUN mkdir -p /opt/apktool \
     && chmod +x /usr/local/bin/apktool
 
 # Share one virtual environment across the Python tools.
-RUN python3 -m venv /opt/hermes-dec \
-    && /opt/hermes-dec/bin/pip install --no-cache-dir \
+RUN python3 -m venv /opt/venv \
+    && /opt/venv/bin/pip install --no-cache-dir \
         "hermes-dec==$HERMES_DEC_VERSION" \
         "androguard==$ANDROGUARD_VERSION" "apkid==$APKID_VERSION" \
-    && /opt/hermes-dec/bin/pip check \
-    && ln -s /opt/hermes-dec/bin/hbc-decompiler /usr/local/bin/hermes-dec
+        "lz4==$LZ4_VERSION" "dnfile==$DNFILE_VERSION" "pyelftools==$PYELFTOOLS_VERSION" \
+    && /opt/venv/bin/pip check \
+    && ln -s /opt/venv/bin/hbc-decompiler /usr/local/bin/hermes-dec
 
 RUN mkdir -p /opt/bundletool \
     && curl -fsSL --retry 3 "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar" -o /opt/bundletool/bundletool.jar \
@@ -74,7 +78,7 @@ RUN curl -fsSL --retry 3 "https://github.com/joernio/joern/releases/download/v${
     && rm /tmp/querydb.zip
 
 COPY --from=ilspy /opt/ilspy /opt/ilspy
-ENV PATH="/opt/joern-cli:/opt/ilspy:/opt/hermes-dec/bin:${PATH}"
+ENV PATH="/opt/joern-cli:/opt/ilspy:/opt/venv/bin:${PATH}"
 
 # Run analysis as the base image's unprivileged app user.
 WORKDIR /work
@@ -93,6 +97,8 @@ RUN jadx --version \
     && baksmali --version \
     && androguard --version \
     && apkid --help > /dev/null \
+    && lz4 --version \
+    && python3 -c 'import dnfile, lz4.block, lz4.frame; from elftools.elf.elffile import ELFFile' \
     && readelf --version \
     && objdump --version \
     && nm --version \
