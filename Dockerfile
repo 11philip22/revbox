@@ -21,8 +21,9 @@ ARG BUNDLETOOL_SHA256=a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        binutils-multiarch ca-certificates curl graphviz libsmali-java lz4 \
-        openjdk-21-jdk-headless python3-venv ripgrep unzip \
+        binutils-multiarch build-essential ca-certificates curl git graphviz jq \
+        libsmali-java lz4 openjdk-21-jdk-headless pkg-config python3-dev \
+        python3-venv ripgrep unzip \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -fsSL --retry 3 "https://github.com/skylot/jadx/releases/download/v${JADX_VERSION}/jadx-${JADX_VERSION}.zip" -o /tmp/jadx.zip \
@@ -45,6 +46,7 @@ RUN python3 -m venv /opt/venv \
         "hermes-dec==$HERMES_DEC_VERSION" \
         "androguard==$ANDROGUARD_VERSION" "apkid==$APKID_VERSION" \
         "lz4==$LZ4_VERSION" "dnfile==$DNFILE_VERSION" "pyelftools==$PYELFTOOLS_VERSION" \
+        uv ruff mypy \
     && /opt/venv/bin/pip check \
     && ln -s /opt/venv/bin/hbc-decompiler /usr/local/bin/hermes-dec
 
@@ -103,7 +105,19 @@ RUN jadx --version \
     && objdump --version \
     && nm --version \
     && strings --version \
+    && uv --version \
+    && ruff --version \
+    && mypy --version \
+    && git --version \
+    && curl --version \
+    && jq --version \
     && rg --version \
+    && unzip -v \
+    && gcc --version \
+    && g++ --version \
+    && make --version \
+    && pkg-config --version \
+    && pkg-config --modversion python3 \
     && bundletool version \
     && joern --help > /dev/null \
     && joern-parse --help > /dev/null \

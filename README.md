@@ -17,6 +17,11 @@ A Docker toolbox for inspecting Android apps.
 | [pyelftools](https://pypi.org/project/pyelftools/0.33/) | 0.33 | Python: `from elftools.elf.elffile import ELFFile` |
 | [GNU Binutils](https://packages.ubuntu.com/noble/binutils-multiarch) | Ubuntu package (2.42) | `readelf`, `objdump`, `nm`, `strings` |
 | [ripgrep](https://packages.ubuntu.com/noble/ripgrep) | Ubuntu package (14.1.0) | `rg` |
+| [uv](https://pypi.org/project/uv/) | Latest at build time | `uv`, `uvx` |
+| [Ruff](https://pypi.org/project/ruff/) | Latest at build time | `ruff` (linting, formatting, import sorting) |
+| [mypy](https://pypi.org/project/mypy/) | Latest at build time | `mypy` |
+| Development utilities | Ubuntu packages | `git`, `curl`, `jq`, `unzip` |
+| Native build tools | Ubuntu packages | `gcc`, `g++`, `make`, `pkg-config`; Python headers |
 | [bundletool](https://github.com/google/bundletool/releases/tag/1.18.3) | 1.18.3 | `bundletool` |
 | [Joern](https://github.com/joernio/joern/releases/tag/v4.0.634) | 4.0.634 | `joern`, `joern-parse`, `joern-export`, `joern-scan`, and bundled frontends |
 
@@ -25,6 +30,8 @@ The image includes the Java 21 JDK, Python 3, .NET 10, `unzip`, and Graphviz for
 Androguard graphs. Binutils supports multiple target architectures. Joern includes
 its default query database and uses the matching AMD64 or ARM64 release.
 Python tools and libraries share `/opt/venv`, with `python3` and `pip` on `PATH`.
+`uv` manages project packages, virtual environments, and dependency locks.
+`build-essential`, `python3-dev`, and `pkg-config` support compiling native extensions.
 
 ## Pull
 
