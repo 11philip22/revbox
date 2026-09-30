@@ -23,12 +23,10 @@ A Docker toolbox for inspecting Android apps.
 | Development utilities | Ubuntu packages | `git`, `curl`, `jq`, `unzip` |
 | Native build tools | Ubuntu packages | `gcc`, `g++`, `make`, `pkg-config`; Python headers |
 | [bundletool](https://github.com/google/bundletool/releases/tag/1.18.3) | 1.18.3 | `bundletool` |
-| [Joern](https://github.com/joernio/joern/releases/tag/v4.0.634) | 4.0.634 | `joern`, `joern-parse`, `joern-export`, `joern-scan`, and bundled frontends |
 
 `jadx-cli` aliases `jadx`; `hermes-dec` aliases `hbc-decompiler`.
 The image includes the Java 21 JDK, Python 3, .NET 10, `unzip`, and Graphviz for
-Androguard graphs. Binutils supports multiple target architectures. Joern includes
-its default query database and uses the matching AMD64 or ARM64 release.
+Androguard graphs. Binutils supports multiple target architectures.
 Python tools and libraries share `/opt/venv`, with `python3` and `pip` on `PATH`.
 `uv` manages project packages, virtual environments, and dependency locks.
 `build-essential`, `python3-dev`, and `pkg-config` support compiling native extensions.
@@ -45,9 +43,8 @@ docker pull philipwold/revbox
 docker build -t philipwold/revbox .
 ```
 
-The build verifies the JADX, Apktool, bundletool, and Joern download checksums and
+The build verifies the JADX, Apktool, and bundletool download checksums and
 runs a startup check for every tool. The .NET SDK is used only in the build stage.
-Joern adds approximately 1.9 GB of downloads plus its query database.
 
 ## Run
 
@@ -75,19 +72,7 @@ docker run --rm -v "$PWD:/work" philipwold/revbox nm -D libnative.so
 docker run --rm -v "$PWD:/work" philipwold/revbox strings libnative.so
 docker run --rm -v "$PWD:/work" philipwold/revbox rg -n 'https?://' java-output
 docker run --rm -v "$PWD:/work" philipwold/revbox bundletool validate --bundle=app.aab
-docker run --rm -v "$PWD:/work" philipwold/revbox joern-parse java-output --language JAVASRC --output cpg.bin
-docker run --rm -it -v "$PWD:/work" philipwold/revbox joern
 ```
 Outputs in `/work` are saved to the host directory. The container runs as the
 unprivileged `app` user; the mounted directory must be writable by that user.
 Use `--help` (or `bundletool help`) for options. Hermes decompilation produces pseudocode.
-
-In the Joern console, use `importCpg("/work/cpg.bin")`, then `cpg.method.name.l` to
-list methods. Its default workspace is inside `/work`, so analysis persists on
-the host. Give Docker enough memory for the codebase being analyzed.
-
-Downloaded tool versions are pinned in `Dockerfile`. To upgrade JADX, Apktool, or
-bundletool, update both the version and its SHA-256 checksum. For Joern, update
-the version, both architecture checksums, and the query database checksum. The
-base image and OS packages receive updates when rebuilding with
-`docker build --pull --no-cache -t philipwold/revbox .`.
