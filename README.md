@@ -5,6 +5,7 @@ A Docker toolbox for inspecting Android apps.
 | Tool | Version | Commands |
 | --- | --- | --- |
 | [JADX](https://github.com/skylot/jadx/releases/tag/v1.5.6) | 1.5.6 | `jadx`, `jadx-cli` |
+| [Ghidra](https://github.com/NationalSecurityAgency/ghidra/releases/tag/Ghidra_12.1.3_build) | 12.1.3 | `analyzeHeadless` (with Jython) |
 | [hermes-dec](https://pypi.org/project/hermes-dec/0.1.7/) | 0.1.7 | `hermes-dec`, `hbc-decompiler`, `hbc-disassembler`, `hbc-file-parser` |
 | [ILSpy CLI](https://www.nuget.org/packages/ilspycmd/11.0.0.9375) | 11.0.0.9375 | `ilspycmd` |
 | [Apktool](https://github.com/iBotPeaches/Apktool/releases/tag/v3.0.3) | 3.0.3 | `apktool` |
@@ -30,6 +31,8 @@ Androguard graphs. Binutils supports multiple target architectures.
 Python tools and libraries share `/opt/venv`, with `python3` and `pip` on `PATH`.
 `uv` manages project packages, virtual environments, and dependency locks.
 `build-essential`, `python3-dev`, and `pkg-config` support compiling native extensions.
+Ghidra is installed at `/opt/ghidra`; `GHIDRA_HOME` and `REFORGE_GHIDRA_HOME`
+both point there. Its bundled Jython extension is installed for headless Python scripts.
 
 ## Pull
 
@@ -43,8 +46,11 @@ docker pull philipwold/revbox
 docker build -t philipwold/revbox .
 ```
 
-The build verifies the JADX, Apktool, and bundletool download checksums and
-runs a startup check for every tool. The .NET SDK is used only in the build stage.
+The build verifies the JADX, Ghidra, Apktool, and bundletool download checksums.
+The .NET SDK is used only in the build stage.
+Ghidra uses the release's native binaries on AMD64 and compiles its native components
+with the bundled Gradle wrapper on ARM64. ARM64 builds require downloading Gradle
+and take longer.
 
 ## Run
 
@@ -70,9 +76,11 @@ docker run --rm -v "$PWD:/work" philipwold/revbox readelf -h libnative.so
 docker run --rm -v "$PWD:/work" philipwold/revbox objdump -d libnative.so
 docker run --rm -v "$PWD:/work" philipwold/revbox nm -D libnative.so
 docker run --rm -v "$PWD:/work" philipwold/revbox strings libnative.so
+docker run --rm -v "$PWD:/work" philipwold/revbox analyzeHeadless /work native-analysis -import /work/libnative.so
 docker run --rm -v "$PWD:/work" philipwold/revbox rg -n 'https?://' java-output
 docker run --rm -v "$PWD:/work" philipwold/revbox bundletool validate --bundle=app.aab
 ```
 Outputs in `/work` are saved to the host directory. The container runs as the
 unprivileged `app` user; the mounted directory must be writable by that user.
-Use `--help` (or `bundletool help`) for options. Hermes decompilation produces pseudocode.
+Use `--help` (or `bundletool help`) for options; run `analyzeHeadless` without
+arguments for Ghidra usage. Hermes decompilation produces pseudocode.
